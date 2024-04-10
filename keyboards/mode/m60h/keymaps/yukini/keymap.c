@@ -26,7 +26,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_LBRC, KC_RBRC, KC_BSPC,
         KC_LCTL, KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,          KC_ENT,
         KC_LSFT,          KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT, MO(1),
-                          MO(2),   KC_LGUI,                   KC_SPC,                             KC_RGUI, KC_RALT
+                          KC_LALT, KC_LGUI,                   SPC_L2,                             KC_RGUI, KC_RALT
     ),
 
     [1] = LAYOUT_60_hhkb(
@@ -39,33 +39,45 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [2] = LAYOUT_60_hhkb(
         KC_ESC,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_INS,  KC_DEL,
-        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,
-        _______, _______, _______, _______, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,          _______,
+        _______, _______, KC_UP,   _______, _______, _______, _______, _______, _______, _______, _______, _______,  _______, _______,
+        _______, KC_LEFT, KC_DOWN, KC_RGHT, _______, _______, KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, _______, _______,          _______,
         _______,          KC_VOLD, KC_VOLU, KC_MUTE, _______, _______, _______, KC_HOME, KC_END,  KC_PGDN, KC_DOWN, _______, _______,
                           _______, _______,                   _______,                            _______, _______
     )
 };
 
-static bool space_pressed = false;
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case SPC_L2:
+            return 100;
+        default:
+            return TAPPING_TERM;
+    }
+}
+
 static bool l_gui_pressed = false;
 static bool r_shift_pressed = false;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
-        case KC_SPC:
-            if (record->event.pressed) {
-                layer_on(2);
-                space_pressed = true;
-            } else {
-                layer_off(2);
-                if (space_pressed) {
-                    register_code(KC_SPC);
-                    unregister_code(KC_SPC);
-                }
-                space_pressed = false;
-            }
-            return false;
-            break;
+        // 思った挙動が取れないので、tapping_termを100ms程度にして解決
+        // case KC_SPC:
+        //     if (record->event.pressed) {
+        //         layer_on(2);
+        //         space_pressed = true;
+        //     } else {
+        //         layer_off(2);
+        //         if (space_pressed) {
+        //             register_code(KC_SPC);
+        //             unregister_code(KC_SPC);
+        //             l_gui_pressed = false;
+        //             l_shift_pressed = false;
+        //             r_shift_pressed = false;
+        //         }
+        //         space_pressed = false;
+        //     }
+        //     return false;
+        //     break;
         case KC_LGUI:
             if (record->event.pressed) {
                 register_code(keycode);
@@ -96,13 +108,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
         default:
             if (record->event.pressed) {
-                // spaceを離す前に他キーを押下しても、spaceのキーコードを送信する
-                // vimのleader-keyにspaceを使っており、spaceキーが離れる前に他キーを押しがちなので設定
-                if (space_pressed) {
-                    register_code(KC_SPC);
-                    unregister_code(KC_SPC);
-                    space_pressed = false;
-                }
                 l_gui_pressed = false;
                 r_shift_pressed = false;
             }
